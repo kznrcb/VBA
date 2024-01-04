@@ -1,0 +1,72 @@
+'clsSheetToArray
+Option Explicit
+'------------------------------------------------------------------------------------
+'   Dim strFullPath As String: strFullPath = "C:\Users\documents\testbook.xlsx"
+'    Dim strSheetName As String: strSheetName = "Sheet1"
+'    Dim FirstRow As Long: FirstRow = 2
+'    Dim FirstCol As Long: FirstCol = 2
+'        
+'    Dim myArray As SheetToArray: Set myArray = New SheetToArray:
+'    Call myArray.ReadDataFromSheet(strFullPath, strSheetName, FirstRow, FirstCol)
+'
+'    Dim TwoDimArray As Variant: TwoDimArray = myArray.TwoDimArray
+'    Dim JaggedArray As Variant: JaggedArray = myArray.JaggedArray
+'    Call checkDataType(myArray.JaggedArray)
+'------------------------------------------------------------------------------------
+Private sourceTwoDimArray As Variant
+Private sourceJaggedArray As Variant
+
+Sub class_initialize()
+    'Nothing set on initializer
+End Sub
+
+Sub class_terminate()
+    'Nothing set on terminater 
+End Sub
+
+Sub ReadDataFromSheet(strFullPath As String, strSheetName As String, FirstRow As Long, FirstCol As Long)
+
+    Dim sourceWb As Workbook: Set sourceWb = Workbooks.Open(strFullPath, UpdateLinks:=False, ReadOnly:=True)
+    
+    With sourceWb.Sheets(strSheetName)
+        Dim LastRow As Long: LastRow = .Cells(.Rows.Count, FirstCol).End(xlUp).Row
+        Dim LastCol As Long: LastCol = .Cells(FirstRow, .Columns.Count).End(xlToLeft).Column
+        Dim sourceRange As Range: Set sourceRange = .Range(.Cells(FirstRow, FirstCol), .Cells(LastRow, LastCol))
+    End With
+    
+    sourceTwoDimArray = sourceRange.Value: sourceWb.Close SaveChanges:=False
+    sourceJaggedArray = ConvertToJaggedArray(sourceTwoDimArray)
+    
+End Sub
+
+Function ConvertToJaggedArray(TwoDimArray As Variant) As Variant()
+    
+    ' 2次元配列の行数と列数を取得
+    Dim rowCount As Long: rowCount = UBound(TwoDimArray, 1) - LBound(TwoDimArray, 1) + 1
+    Dim colCount As Long: colCount = UBound(TwoDimArray, 2) - LBound(TwoDimArray, 2) + 1
+
+    ' ジャグ配列の初期化
+    Dim JaggedArray() As Variant: ReDim JaggedArray(1 To rowCount)
+
+    ' 2次元配列からジャグ配列への変換
+    Dim i As Long, j As Long
+    For i = 1 To rowCount
+        ReDim tempArray(1 To colCount)
+        For j = 1 To colCount
+            tempArray(j) = TwoDimArray(i, j)
+        Next j
+        JaggedArray(i) = tempArray
+    Next i
+
+    ' 結果を返す
+    ConvertToJaggedArray = JaggedArray
+End Function
+
+
+Property Get TwoDimArray() As Variant()
+ TwoDimArray = sourceTwoDimArray
+End Property
+
+Property Get JaggedArray() As Variant()
+ JaggedArray = sourceJaggedArray
+End Property
